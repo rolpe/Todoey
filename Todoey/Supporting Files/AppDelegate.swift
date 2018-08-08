@@ -20,25 +20,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         print(Realm.Configuration.defaultConfiguration.fileURL!)
         
+        let config = Realm.Configuration(
+            
+            schemaVersion: 2,
+            
+            migrationBlock: { migration, oldSchemaVersion in
+                
+                if (oldSchemaVersion < 2) {
+
+                }
+        })
+        
+        Realm.Configuration.defaultConfiguration = config
+        
         
         do {
             _ = try Realm()
         } catch {
             print("Error initializing new Realm: \(error)")
         }
-        
-        let config = Realm.Configuration(
-            
-            schemaVersion: 1,
-            
-            migrationBlock: { migration, oldSchemaVersion in
-                
-                if (oldSchemaVersion < 1) {
-
-                }
-        })
-        
-        Realm.Configuration.defaultConfiguration = config
         
         
         return true

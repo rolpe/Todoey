@@ -8,8 +8,9 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
-class CategoryViewController: UITableViewController {
+class CategoryViewController: SwipeTableViewController {
     
     lazy var realm = try! Realm()
     
@@ -17,8 +18,8 @@ class CategoryViewController: UITableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         loadCategories()
+        tableView.separatorStyle = .none
 
     }
     
@@ -26,9 +27,17 @@ class CategoryViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
         
-        cell.textLabel?.text = categories?[indexPath.row].name ?? "Add a new category!"
+        if let category = categories?[indexPath.row] {
+    
+            cell.textLabel?.text = category.name
+        
+            guard let color = UIColor(hexString: category.color) else {fatalError()}
+        
+            cell.backgroundColor = color
+            cell.textLabel?.textColor = ContrastColorOf(color, returnFlat: true)
+        }
         
         return cell
     }
@@ -47,6 +56,7 @@ class CategoryViewController: UITableViewController {
             
             let newCategory = Category()
             newCategory.name = textField.text!
+            newCategory.color = RandomFlatColorWithShade(.light).hexValue()
             self.save(category: newCategory)
         }
         
@@ -62,23 +72,6 @@ class CategoryViewController: UITableViewController {
     }
     
     //MARK: - TableView Delegate Methods
-    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
-        if editingStyle == .delete {
-
-            if let category = categories?[indexPath.row] {
-                do {
-                    try realm.write {
-                        realm.delete(category)
-                    }
-                } catch {
-                    print("Error deleting category: \(error)")
-                }
-            }
-            
-            tableView.deleteRows(at: [indexPath], with: .automatic)
-
-        }
-    }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         performSegue(withIdentifier: "goToItems", sender: self)
@@ -113,9 +106,18 @@ class CategoryViewController: UITableViewController {
         tableView.reloadData()
     }
 
+    override func updateModel(at indexPath: IndexPath) {
+        if let category = self.categories?[indexPath.row] {
+            do {
+                try self.realm.write {
+                    self.realm.delete(category.items)
+                    self.realm.delete(category)
+                }
+            } catch {
+                print("Error deleting category: \(error)")
+            }
+        }
+    }
     
 
 }
-
-//MARK - Search Bar Methods
-
